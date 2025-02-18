@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App with Private Messaging</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #chat-container {
+            width: 420px;
+            height: 650px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+      
+        /* Chat Header Styling */
+        #room-container {
+            padding: 20px;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+        }
+
+        #room-container input {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: calc(100% - 24px); /* Adjusts the width to fit within the container */
+            box-sizing: border-box; /* Ensures padding is included in the width calculation */
+        }
+        
+        #room-container button {
+            padding: 10px;
+            background-color: white;
+            color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        #room-container button:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+
+        /* Chat Messages Styling */
+        #messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #messages p {
+            margin: 10px 0;
+            padding: 10px 15px;
+            background-color: #e9e9e9;
+            border-radius: 20px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        /* Styling for Sent and Received Messages */
+        #messages .sent {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+
+        #messages .received {
+            background-color: #e9e9e9;
+            color: #333;
+            margin-right: auto;
+        }
+
+        /* Input and Send Button Styling */
+        #input-container {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background-color: #f0f2f5;
+        }
+
+        #input-container input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        #input-container button {
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #input-container button:hover {
+            background-color: #218838;
+        }
+
+        #recipient-input {
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="room-container">
+            <input type="text" id="username" placeholder="Enter your username">
+            <input type="text" id="room" placeholder="Enter room code">
+            <button id="join-button">Join Room</button>
+            <button id="leave-button">Leave Room</button>
+        </div>
+
+        <div id="messages"></div>
+
+        <div id="input-container">
+            <input type="text" id="message-input" placeholder="Type your message...">
+            <input type="text" id="recipient-input" placeholder="Recipient username (optional)">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://192.168.102.144:5000');  // Update with your server URL
+
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const recipientInput = document.getElementById('recipient-input');
+        const sendButton = document.getElementById('send-button');
+        const usernameInput = document.getElementById('username');
+        const roomInput = document.getElementById('room');
+        const joinButton = document.getElementById('join-button');
+        const leaveButton = document.getElementById('leave-button');
+
+        let room = '';
+        let username = '';
+
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+
+        joinButton.addEventListener('click', function() {
+            username = usernameInput.value;
+            room = roomInput.value;
+            if (username.trim() && room.trim()) {
+                console.log('Joining room:', room);
+                socket.emit('join', { username, room });
+            }
+        });
+
+        leaveButton.addEventListener('click', function() {
+            console.log('Leaving room:', room);
+            socket.emit('leave', { username, room });
+            room = '';
+        });
+
+        socket.on('message', function(data) {
+            console.log('Received message:', data);
+            const newMessage = document.createElement('p');
+            newMessage.textContent = `${data.username}: ${data.msg}`;
+            newMessage.className = data.username === username ? 'sent' : 'received'; // Style sent vs received messages
+            messagesDiv.appendChild(newMessage);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to bottom
+        });
+
+        sendButton.addEventListener('click', function() {
+            const message = messageInput.value;
+            const recipient = recipientInput.value;
+            if (message.trim() !== "" && room !== "") {
+                console.log('Sending message:', message, 'to:', recipient);
+                socket.emit('message', { sender: username, msg: message, recipient, room });
+                messageInput.value = '';
+                recipientInput.value = '';
+            }
+        });
+
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+    </script>
+</body>
+</html>
