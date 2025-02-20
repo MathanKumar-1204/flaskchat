@@ -41,15 +41,21 @@ def handle_message(data):
     recipient = data.get('recipient')
     room = users.get(sender, {}).get('room')
     
-    if recipient and msg and room:
-        recipient_room = users.get(recipient, {}).get('room')
-        if room == recipient_room:
-            print(f'{sender} to {recipient} in room {room}: {msg}')  # Debugging log on server
-            emit('message', {'username': sender, 'msg': msg}, room=recipient_room)
+   
+    if msg and sender and room:
+        if recipient:
+            recipient_room = users.get(recipient, {}).get('room')
+            if room == recipient_room:
+                print(f'{sender} to {recipient} in room {room}: {msg}')
+                emit('message', {'username': sender, 'msg': msg}, room=recipient_room)
+            else:
+                print(f'Error: {recipient} is not in the same room or does not exist.')
         else:
-            print(f'Error: {recipient} is not in the same room or does not exist.')
+            # Broadcast to all users in the room
+            print(f'{sender} (to all in room {room}): {msg}')
+            emit('message', {'username': sender, 'msg': msg}, room=room)
     else:
-        print('Error: Missing sender, recipient, message, or room.')
+        print('Error: Missing sender, message, or room.')
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)  # Listen on all interfaces
