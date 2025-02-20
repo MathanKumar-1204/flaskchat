@@ -142,18 +142,17 @@
             <button id="leave-button">Leave Room</button>
         </div>
 
-        <div id="messages"></div>
+        <div id="messages"></div>s
 
         <div id="input-container">
             <input type="text" id="message-input" placeholder="Type your message...">
-            <input type="text" id="recipient-input" placeholder="Recipient username (optional)">
             <button id="send-button">Send</button>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
     <script>
-        const socket = io('https://flaskchat-ud9z.onrender.com');  // Update with your server URL
+        const socket = io('https://flaskchat-ud9z.onrender.com/');  // Update with your server URL
 
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
@@ -188,29 +187,35 @@
 
         socket.on('message', function(data) {
             console.log('Received message:', data);
+        
+            // Prevent duplicate messages from being added
+ 
+        
             const newMessage = document.createElement('p');
             newMessage.textContent = `${data.username}: ${data.msg}`;
-            newMessage.className = data.username === username ? 'sent' : 'received'; // Style sent vs received messages
+            newMessage.className = data.username === username ? 'sent' : 'received'; 
             messagesDiv.appendChild(newMessage);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to bottom
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
+        
 
         sendButton.addEventListener('click', function() {
             const message = messageInput.value;
-            const recipient = recipientInput.value;
             if (message.trim() !== "" && room !== "") {
-                console.log('Sending message:', message, 'to:', recipient);
-                socket.emit('message', { sender: username, msg: message, recipient, room });
-                messageInput.value = '';
-                recipientInput.value = '';
+                console.log('Sending message:', message);
+                socket.emit('message', { sender: username, msg: message });
+                messageInput.value = ''; 
             }
         });
+        
 
         messageInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendButton.click();
             }
         });
+      
+        
     </script>
 </body>
 </html>
