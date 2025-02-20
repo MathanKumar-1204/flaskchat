@@ -1,5 +1,4 @@
-Flask==2.0.3
-Flask-SocketIO==5.1.1
-Flask-Cors==3.0.10
-eventlet==0.31.1
-Werkzeug==1.0.1
+Flask
+Flask-SocketIO
+Flask-Cors
+eventlet
